@@ -1,74 +1,96 @@
-import { fetchBreeds, fetchCatByBreed } from './cat-api';
+// import { renderImages } from'./markup';
+import { fetchImages } from './gallery-api';
+import SimpleLightbox from "simplelightbox";
+import "simplelightbox/dist/simple-lightbox.min.css";
 import Notiflix from 'notiflix';
-import SlimSelect from 'slim-select'
-import "/node_modules/slim-select/dist/slimselect.css";
+export let page = 1;
+
+let currentSearchQuery = '';
 
 const refs = {
-    breedSelect: document.querySelector('.breed-select'),
-    loader: document.querySelector('.loader'),
-    error: document.querySelector('.error'),
-    catInfo: document.querySelector('.cat-info'),
+    container: document.querySelector('.gallery'),
+    form: document.querySelector('.search-form'), 
+    load: document.querySelector('.load-more'),   
 };
 
-function onSelect () {
-    const select = new SlimSelect({
-        select: '#breed-select'
-      })
+const lightbox = new SimpleLightbox('.gallery a', {
+  captionDelay: 250
+ }); 
+
+refs.container.classList.add('visually-hidden');
+refs.load.classList.add('visually-hidden');
+ 
+refs.form.addEventListener('submit', onSearchImages);
+refs.load.addEventListener('click', onLoadMore);
+
+async function onSearchImages(event) {
+event.preventDefault();
+const form = event.currentTarget;
+const requestWord = form.elements.searchQuery.value;
+if (requestWord === "") {
+  Notiflix.Notify.warning("Please fill the field!");
+  return;
+} 
+
+page = 1;
+currentSearchQuery = requestWord;
+
+try {
+  const { hits, totalHits } = await fetchImages(currentSearchQuery);
+  if (totalHits === 0) {
+      Notiflix.Notify.failure('Sorry, there are no images matching your search query. Please try again.'); 
+      return;
+  } 
+  
+  refs.container.innerHTML = '';
+  renderImages(hits);
+  lightbox.refresh(); 
+  refs.container.classList.remove('visually-hidden');
+  refs.load.classList.remove('visually-hidden');
+  
+ if (page === 1) {
+    Notiflix.Notify.success(`Hooray! We found ${totalHits} images.`);
+ }
+} catch (error) {
+  Notiflix.Notify.failure('Oops! Something went wrong. Please try again later.', error);
+} finally {   
+  refs.form.reset();  
+}
 }
 
-function destroySelect () {
-    const select = new SlimSelect({
-        select: '#breed-select'
-      })
-      select.destroy()
+
+function renderImages(arr) {
+  const markup = arr
+  .map(({ webformatURL,largeImageURL, tags, likes, views, comments, downloads }) => {
+  return `<li class="gallery__item">
+ <a class="photo-card" href="${largeImageURL}">
+ <img src="${webformatURL}" width="325" height="230 alt="${tags}" loading="lazy" />
+ <div class="info">
+   <p class="info-item"><b>Likes ${likes}</b></p>
+   <p class="info-item"><b>View ${views}</b></p>
+   <p class="info-item"><b>Comments ${comments}</b></p>
+   <p class="info-item"><b>Downloads ${downloads}</b></p>
+ </div>
+</a>
+</li>`
+}).join('');
+refs.container.insertAdjacentHTML('beforeend', markup);
 }
 
-fetchBreeds()
-.then((breeds) => {       
-    const markup = breeds.map(({id, name}) => {                
-        return `<option value="${id}">${name}</option>`
-    }).join("");
-   
-    refs.breedSelect.insertAdjacentHTML('afterbegin', markup);
-    refs.breedSelect.classList.remove('is-hidden'); 
-    onSelect ()    
-})
-.catch(error => {
-    Notiflix.Notify.failure('Error fetching cat info: ', error);         
-})
-.finally(() => {        
-    refs.loader.style.display = 'none';  
-});
 
- refs.breedSelect.addEventListener('change', event => {
-    event.preventDefault();
-    const selectedBreedId = refs.breedSelect.value;  
-    refs.loader.style.display = 'block';  
-    refs.catInfo.innerHTML = '';
-          
-fetchCatByBreed(selectedBreedId)
- .then((catData) => { 
-      if (catData.length > 0) {   
-    const breedInfo = catData[0].breeds[0];  
-    refs.catInfo.innerHTML = `
-        <img class= "cat-info-img" src="${catData[0].url}" width="300" alt="${breedInfo.name}">
-        <div class= "cat">
-        <h2>${breedInfo.name}</h2>
-        <p class= "cat-info-text">${breedInfo.description}</p>
-        <p class= "cat-info-text-bold">Temperament: <span class= "cat-info-text-temp">${breedInfo.temperament}</span></p>
-        </div>                
-    `;
-    refs.catInfo.classList.remove('is-hidden'); 
-    } else {          
-        refs.error.style.display = 'block';
-        refs.breedSelect.classList.add('is-hidden');  
-        destroySelect ();    
-      }      
-})
- .catch(error => {
-    Notiflix.Notify.failure('Error fetching cat info: ', error);  
-    })
-.finally(() => {   
-    refs.loader.style.display = 'none';      
-    });
-});
+async function onLoadMore() {
+  page++; 
+  try {
+    const { hits, totalHits } = await fetchImages(currentSearchQuery);
+    renderImages(hits);
+    lightbox.refresh(); 
+    if ((page - 1) * 40 >= totalHits) {
+      refs.load.classList.add('visually-hidden');
+      Notiflix.Notify.info("We're sorry, but you've reached the end of search results.");
+  } else {
+      refs.load.classList.remove('visually-hidden');
+  }
+} catch (error) {
+  Notiflix.Notify.failure('Oops! Something went wrong. Please try again later.', error);
+}
+  }
