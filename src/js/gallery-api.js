@@ -1,5 +1,5 @@
 import axios from "axios";
-import { page } from './index';
+import { page, per_page } from './index';
 
 export async function fetchImages(requestWord) { 
     const BASE_URL = 'https://pixabay.com/api/';
@@ -11,7 +11,7 @@ export async function fetchImages(requestWord) {
         orientation: 'horizontal',
         safesearch: true,
         page: page,
-        per_page: 40,
+        per_page: per_page,
     };    
     try {
      const response = await axios.get(BASE_URL, { params });  
