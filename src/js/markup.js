@@ -3,7 +3,7 @@ export function renderImages(arr) {
     const markup = arr
     .map(({ webformatURL,largeImageURL, tags, likes, views, comments, downloads }) => {
     return `<li class="gallery__item">
-   <a class="photo-card" href="${largeImageURL}">
+   <a class="photo-card link" href="${largeImageURL}">
    <img src="${webformatURL}" width="325" height="230 alt="${tags}" loading="lazy" />
    <div class="info">
      <p class="info-item"><b>Likes ${likes}</b></p>
