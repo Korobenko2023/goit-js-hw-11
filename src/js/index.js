@@ -20,7 +20,6 @@ refs.container.classList.add('visually-hidden');
 refs.load.classList.add('visually-hidden');
  
 refs.form.addEventListener('submit', onSearchImages);
-refs.load.addEventListener('click', onLoadMore);
 
 async function onSearchImages(event) {
 event.preventDefault();
@@ -47,18 +46,19 @@ try {
   lightbox.refresh(); 
   refs.container.classList.remove('visually-hidden');
 
-  observer.observe(document.getElementById("infinite-scroll-trigger"));   
+  observer.observe(document.getElementById("infinite-scroll-trigger"));  
  
   if (page === 1) {   
     Notiflix.Notify.success(`Hooray! We found ${totalHits} images.`);   
     return;
- }
- 
+  }
+   
   const totalPages = Math.ceil(totalHits / per_page);
   if (page >= totalPages) {   
    Notiflix.Notify.info("We're sorry, but you've reached the end of search results.");
-   return;
-} 
+   observer.unobserve(document.getElementById("infinite-scroll-trigger"));  
+  } 
+
 } catch (error) {
   Notiflix.Notify.failure('Oops! Something went wrong. Please try again later.', error);
 } finally {   
@@ -69,18 +69,17 @@ try {
 async function onLoadMore() {
   page++; 
   try {
-    const { hits, totalHits } = await fetchImages(currentSearchQuery);   
+    const { hits, totalHits } = await fetchImages(currentSearchQuery);       
     const totalPages = Math.ceil(totalHits / per_page);
+
+    renderImages(hits);
+    lightbox.refresh();   
 
     if (page >= totalPages)  {          
      Notiflix.Notify.info("We're sorry, but you've reached the end of search results."); 
      observer.unobserve(document.getElementById("infinite-scroll-trigger"));   
-    return;    
-  }  
-  
-  renderImages(hits);
-  lightbox.refresh();  
-  
+    } 
+    
 } catch (error) {
   Notiflix.Notify.failure('Oops! Something went wrong. Please try again later.', error);
 } 
