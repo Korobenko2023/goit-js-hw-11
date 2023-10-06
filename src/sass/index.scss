@@ -6,7 +6,7 @@
   --cloud-color: #fcfdfd;
   --ocean-color: #56cbd3;   
   --dairy-color: #fcfdfd;
-  --tra-dur-and-func: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --tra-dur-and-func: 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 body {
@@ -100,7 +100,7 @@ img {
 
 .gallery__link:hover,
 .gallery__link:focus {
-  transform: scale(1.04);
+  transform: scale(1.02);
 }
 
 .info {
