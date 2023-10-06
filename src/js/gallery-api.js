@@ -14,9 +14,8 @@ export async function fetchImages(requestWord) {
         per_page: per_page,
     };    
     try {
-     const response = await axios.get(BASE_URL, { params });  
-     const { hits, totalHits } = response.data;
-     return { hits, totalHits };
+    const {data} = await axios.get(BASE_URL, { params });  
+    return data;
     } catch (error) {
         throw error;
     }
